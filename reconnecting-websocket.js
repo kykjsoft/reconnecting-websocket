@@ -107,7 +107,7 @@
     }
 
     function ReconnectingWebSocket(url, protocols, options) {
-
+        
         // Default settings
         var settings = {
 
@@ -173,6 +173,7 @@
         var forcedClose = false;
         var timedOut = false;
         var eventTarget = document.createElement('div');
+        var ready = false;
 
         // Wire up "on*" properties as event handlers
 
@@ -181,7 +182,6 @@
         eventTarget.addEventListener('connecting', function(event) { self.onconnecting(event); });
         eventTarget.addEventListener('message',    function(event) { self.onmessage(event); });
         eventTarget.addEventListener('error',      function(event) { self.onerror(event); });
-
         // Expose the API required by EventTarget
 
         this.addEventListener = eventTarget.addEventListener.bind(eventTarget);
@@ -240,6 +240,16 @@
                 self.protocol = ws.protocol;
                 self.readyState = WebSocket.OPEN;
                 self.reconnectAttempts = 0;
+                if(ready === false){
+                    ready = true;
+                    var event_ready = generateEvent('ready');
+                    event_ready.isReconnect = reconnectAttempt;
+                    eventTarget.dispatchEvent(event_ready);
+                }else{
+                    var event_reconnected = generateEvent('reconnected');
+                    event_reconnected.isReconnect = reconnectAttempt;
+                    eventTarget.dispatchEvent(event_reconnected);
+                }
                 var e = generateEvent('open');
                 e.isReconnect = reconnectAttempt;
                 reconnectAttempt = false;
@@ -300,6 +310,38 @@
          * @param data a text string, ArrayBuffer or Blob to send to the server.
          */
         this.send = function(data) {
+            if (ws && ReconnectingWebSocket.OPEN==ws.readyState) {
+                if (this.debug || ReconnectingWebSocket.debugAll) {
+                    console.debug('ReconnectingWebSocket', 'send', self.url, data);
+                }
+                return Promise.resolve(ws.send(data))
+            } else {
+                console.debug('ReconnectingWebSocket', 'addSendOnceOpen', self.url, data);
+                return new Promise(function(resolve){
+                    self.once("open",function(){
+                        console.debug('ReconnectingWebSocket', 'send', self.url, data);
+                        resolve(self.send(data));
+                    })
+                })
+            }
+        };
+
+    
+        this.once = function(name,fn){
+            this.addEventListener(name,function(){
+                fn.apply(self,arguments);
+                self.removeEventListener("message",fn)
+            })
+        }
+
+        /**
+         * Transmits data to the server over the WebSocket connection.
+         *
+         * @param data a text string, ArrayBuffer or Blob to send to the server.
+         */
+        this.sendnow = function(data) {
+            
+
             if (ws) {
                 if (self.debug || ReconnectingWebSocket.debugAll) {
                     console.debug('ReconnectingWebSocket', 'send', self.url, data);

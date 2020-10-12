@@ -37,7 +37,7 @@ var Log = (function(){
         }
         var time = function(){
             var dt = new Date();
-            return `${dt.getHours()}:${dt.getMinutes()}:${dt.getSeconds()}`
+            return ["getHours","getMinutes","getSeconds"].map(s=>dt[s]()).map(s=>(s.length==1?"0":"")+s).join(":")
         }
 
         var log = function(){

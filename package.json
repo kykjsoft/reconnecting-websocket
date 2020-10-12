@@ -5,6 +5,7 @@
   "main": "reconnecting-websocket.js",
   "scripts": {
     "example": "node ./example/app.js",
+    "min": "uglifyjs reconnecting-websocket.js -m -o reconnecting-websocket.min.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -16,5 +17,8 @@
   "bugs": {
     "url": "https://github.com/joewalnes/reconnecting-websocket/issues"
   },
-  "homepage": "https://github.com/joewalnes/reconnecting-websocket"
+  "homepage": "https://github.com/joewalnes/reconnecting-websocket",
+  "dependencies": {
+    "uglify-js": "^3.11.2"
+  }
 }

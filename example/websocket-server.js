@@ -53,7 +53,9 @@ const server = net.createServer((socket) => {
 
             // 7. 建立连接后，通过data事件接收客户端的数据并处理
             socket.on('data', (buffer) => {
+                console.log("on data");
                 const data = decodeWsFrame(buffer)
+                console.log(data);
                 const txt = data.payloadData ? data.payloadData.toString() : '';
                 console.log(txt);
                 if(txt==="2"){

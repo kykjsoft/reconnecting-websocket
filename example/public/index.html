@@ -34,8 +34,19 @@
     <script>
 
 
-        var log = Log(document.getElementById("logbox"));
-        function loger(msg){return function(){log.success(msg);}}
+        var _log = Log(document.getElementById("logbox"));
+        var getlogtext = function(str,len,before){
+            if(str.length<=len){
+                return str;
+            }
+            return str.substr(0,before)+"..."+str.substr(-len+before);
+        }
+        var log = function(msg){
+            _log.success(getlogtext(msg,15,7));
+        }
+        function loger(msg){return function(){
+            log(msg);
+        }}
         
         // 配置 （开发中）
         var option = {
@@ -57,7 +68,7 @@
         var socket =  new ReconnectingWebSocket(input.value,null,{
             automaticOpen:true,
             debug:true,
-            timeoutInterval:100
+            //timeoutInterval:100
         });
 
         btn.addEventListener("click",function(){
@@ -75,12 +86,15 @@
         socket.addEventListener("open",function(){
             log("已连接");
         })
+        socket.addEventListener("reconnected",function(){
+            log("重新连接成功");
+        })
         socket.addEventListener("close",function(){
             log("连接已断开");
         })
         socket.addEventListener("message",function(rev){
             txt.value = JSON.stringify(rev.data,null,4)
-            log("接收到数据:"+txt.value.substr(0,7));
+            log("接收到数据:"+txt.value);
             ///console.log();
         })
         socket.addEventListener("error",function(event){
@@ -88,13 +102,22 @@
             document.getElementById("txtMessage").value = JSON.stringify(event,null,4)
             ///console.log();
         })
+        socket.addEventListener("ready",function(event){
+            log("首次连接成功");
+            socket.sendnow("test");
+            ///console.log();
+        })
 
+        /*
+        socket.send(333)
+        .then(function(){
+            log.success("发送成功");
+        })
+        */
+
+        //socket.sendnow("222")
         document.getElementById("btnSend").onclick = function(){
-            //if(socket.isConnected()){
-                socket.send(document.getElementById("txtSend").value).then(loger("发送成功"));
-            //}else{
-            //    log.success("发送失败，未连接");
-            //}
+            socket.send(document.getElementById("txtSend").value);
         }
     </script>
 </body>
