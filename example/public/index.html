@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="flex borderstyle" style="position:fixed;top:8px;left:8px;bottom:8px;right:8px;border-width:1px;">
+        <div class="flex-column flex-item padding">
+            <div>
+                <label>ws：</label>
+                <input id="url" />
+                <button id="btn">修改url</button>
+            </div>
+            <label>发送内容：</label>
+            <textarea  id="txtSend" style="width:100%;height: 200px;"></textarea>
+            <button id="btnSend">发送</button>
+            <label>接收内容：</label>
+            <textarea id="txtMessage" class="flex-item"></textarea>
+        </div>
+        <div class="borderstyle flex-column" style="width:300px;border-left-width:1px;padding:8px;">
+            <div class="borderstyle" style="border-bottom-width:1px;padding-bottom:8px;">
+                操作日志：
+            </div>
+            <div id="logbox" class="flex-item" style="overflow: auto;"></div>
+        </div>
+    </div>
+
+    <!-- websocket 组件 -->
+    <script src="util.js"></script>
+    <script src="reconnecting-websocket.js"></script>
+    <script>
+
+
+        var log = Log(document.getElementById("logbox"));
+        function loger(msg){return function(){log.success(msg);}}
+        
+        // 配置 （开发中）
+        var option = {
+            autoOpen:true, // 自动登陆
+            url:"",
+            login:{
+                name:"",
+                pwd:""
+            },
+            then:function(rev){
+                return rev.data;
+            }
+        }
+        var input = document.getElementById("url");
+        var btn = document.getElementById("btn");
+        var txt = document.getElementById("txtMessage");
+        input.value = "ws://127.0.0.1:8080";
+
+        var socket =  new ReconnectingWebSocket(input.value,null,{
+            automaticOpen:true,
+            debug:true,
+            timeoutInterval:100
+        });
+
+        btn.addEventListener("click",function(){
+            if(socket.isConnecting()){
+                socket.stopconnect();
+            }else if(socket.isConnected()){
+                socket.destroySocket();
+            }
+            socket.option.host = input.value;
+            socket.connect();
+        })
+
+        socket.addEventListener("log",log,null)
+
+        socket.addEventListener("open",function(){
+            log("已连接");
+        })
+        socket.addEventListener("close",function(){
+            log("连接已断开");
+        })
+        socket.addEventListener("message",function(rev){
+            txt.value = JSON.stringify(rev.data,null,4)
+            log("接收到数据:"+txt.value.substr(0,7));
+            ///console.log();
+        })
+        socket.addEventListener("error",function(event){
+            log("连接异常");
+            document.getElementById("txtMessage").value = JSON.stringify(event,null,4)
+            ///console.log();
+        })
+
+        document.getElementById("btnSend").onclick = function(){
+            //if(socket.isConnected()){
+                socket.send(document.getElementById("txtSend").value).then(loger("发送成功"));
+            //}else{
+            //    log.success("发送失败，未连接");
+            //}
+        }
+    </script>
+</body>
+</html>
